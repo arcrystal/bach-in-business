@@ -127,3 +127,16 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# Other
+*.docx
+*.pptx
+Music/
+Models/
+Data/
+Generated/
+History/
+Logs/
+Deliverables/
+Figures/
+

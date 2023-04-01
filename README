@@ -1,0 +1,2 @@
+Make new data, train model, generate music and save midi file:
+  $ python pipeline.py -m 'bach/*' -t -n bach -g -sm
