@@ -1,2 +1,3 @@
-Make new data, train model, generate music and save midi file:
-  $ python pipeline.py -m 'bach/*' -t -n bach -g -sm
+Make new data, save the data, train model for 360 epochs, name the output files, generate music and save the midi file
+  $ python pipeline_onehand.py -m 'bach/*' -s -t -e 360 -n bach
+  $ tensorboard --logdir ./Logs/bach --port 8080
