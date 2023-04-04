@@ -143,24 +143,24 @@ def generate_music(model, network_input_notes, network_input_durations, pitchnam
     int_to_duration = {number:dur for number, dur in enumerate(duration_names)}
 
     pattern_notes = network_input_notes[start]
-    pattern_durations = network_input_durations[start]
+    pattern_durs = network_input_durations[start]
     prediction_output = []
 
     for _ in range(num_notes):
-        prediction_input_notes = np.reshape(pattern_notes, (1, len(pattern_notes), 1))
-        prediction_input_durations = np.reshape(pattern_durations, (1, len(pattern_durations), 1))
+        pred_in_notes = np.reshape(pattern_notes, (1, len(pattern_notes), 1))
+        pred_in_durs = np.reshape(pattern_durs, (1, len(pattern_durs), 1))
 
-        note_prediction, duration_prediction = model.predict([prediction_input_notes, prediction_input_durations], verbose=0)
-        index_notes = np.argmax(note_prediction)
-        index_durations = np.argmax(duration_prediction)
+        note_pred, dur_pred = model.predict([pred_in_notes, pred_in_durs], verbose=0)
+        index_notes = np.argmax(note_pred)
+        index_durs = np.argmax(dur_pred)
         note_result = int_to_note[index_notes]
-        duration_result = int_to_duration[index_durations]
-        prediction_output.append((note_result, duration_result))
+        dur_result = int_to_duration[index_durs]
+        prediction_output.append((note_result, dur_result))
 
         pattern_notes = np.append(pattern_notes, index_notes)
         pattern_notes = pattern_notes[1:]
-        pattern_durations = np.append(pattern_durations, index_durations)
-        pattern_durations = pattern_durations[1:]
+        pattern_durs = np.append(pattern_durs, index_durs)
+        pattern_durs = pattern_durs[1:]
 
     return prediction_output
 

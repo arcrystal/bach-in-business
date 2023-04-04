@@ -351,41 +351,6 @@ def create_midi(music, fname="twohand_music"):
         new_note.duration = duration.Duration(left_dur)
         new_note.storedInstrument = instrument.Piano()
         output_notes_left.append(new_note)
-        # if ("." in right_pattern) or right_pattern.isdigit():
-        #     notes_in_chord = right_pattern.split(".")
-        #     notes = []
-        #     for current_note in notes_in_chord:
-        #         new_note = note.Note(int(current_note))
-        #         new_note.storedInstrument = instrument.Piano()
-        #         notes.append(new_note)
-        #     new_chord = chord.Chord(notes)
-        #     new_chord.offset = offset_right
-        #     new_chord.duration = duration.Duration(right_dur)
-        #     output_notes_right.append(new_chord)
-        # else:
-        #     new_note = note.Note(right_pattern)
-        #     new_note.offset = offset_right
-        #     new_note.duration = duration.Duration(right_dur)
-        #     new_note.storedInstrument = instrument.Piano()
-        #     output_notes_right.append(new_note)
-
-        # if ("." in left_pattern) or left_pattern.isdigit():
-        #     notes_in_chord = left_pattern.split(".")
-        #     notes = []
-        #     for current_note in notes_in_chord:
-        #         new_note = note.Note(int(current_note))
-        #         new_note.storedInstrument = instrument.Piano()
-        #         notes.append(new_note)
-        #     new_chord = chord.Chord(notes)
-        #     new_chord.offset = offset_left
-        #     new_chord.duration = duration.Duration(left_dur)
-        #     output_notes_left.append(new_chord)
-        # else:
-        #     new_note = note.Note(left_pattern)
-        #     new_note.offset = offset_left
-        #     new_note.duration = duration.Duration(left_dur)
-        #     new_note.storedInstrument = instrument.Piano()
-        #     output_notes_left.append(new_note)
 
         offset_right += right_dur
         offset_left += left_dur
