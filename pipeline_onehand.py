@@ -11,6 +11,7 @@ import argparse
 import json
 import contextlib
 from fractions import Fraction
+import os
 with contextlib.redirect_stdout(None):
     import pygame
 
@@ -24,13 +25,7 @@ def feature_extraction(folders):
             durations = []
             print("Extracting:", file)
             midi = converter.parse(file)
-            notes_to_parse = None
-
-            try:
-                parts = instrument.partitionByInstrument(midi)
-                notes_to_parse = parts.parts[0].recurse()
-            except:
-                notes_to_parse = midi.flat.notes
+            notes_to_parse = instrument.partitionByInstrument(midi).flat
 
             for element in notes_to_parse:
                 if isinstance(element, note.Note):
@@ -71,14 +66,13 @@ def preprocess_data(all_notes, all_durations, lookback=100):
 
     out_notes = to_categorical(out_notes)
     out_durations = to_categorical(out_durations)
-    print(in_notes.shape, out_notes.shape, len(pitchnames))
 
     return in_notes, in_durations, out_notes, out_durations, pitchnames, duration_names
 
-def build_model(input_shape_notes, input_shape_durations, output_size_notes, output_size_durations):
+def build_model(lookback, output_size_notes, output_size_durations):
 
-    in_notes = Input(shape=(input_shape_notes[1], 1))  # Adjusted input shape for notes
-    in_durations = Input(shape=(input_shape_durations[1], 1))  # Adjusted input shape for durations
+    in_notes = Input(shape=(lookback, 1))  # Adjusted input shape for notes
+    in_durations = Input(shape=(lookback, 1))  # Adjusted input shape for durations
     
     # Process notes
     lstm_notes_1 = LSTM(256, return_sequences=True)(in_notes)
@@ -106,25 +100,19 @@ def build_model(input_shape_notes, input_shape_durations, output_size_notes, out
     print(model.summary())
     return model
 
-def train_model(model, in_notes, in_durations, out_notes, out_durations, epochs, batch_size, model_fname='model'):
+def train_model(model, in_notes, in_durations, out_notes, out_durations, epochs, batch_size, fname='model'):
     my_callbacks = [
-        ModelCheckpoint(filepath='Models/model.{epoch:02d}-loss{loss:.2f}.h5',
-                        save_best_only=True,
-                        monitor='loss',
-                        mode='min',
-                        initial_value_threshold=0.6),
-        ModelCheckpoint(filepath='Models/model.{epoch:02d}-acc{notes_accuracy:.2f}.h5',
+        ModelCheckpoint(filepath=f'Models/{fname}.best.h5',
                         save_best_only=True,
                         monitor='notes_accuracy',
-                        mode='max',
-                        initial_value_threshold=0.84),
-        TensorBoard(log_dir='./Logs')
+                        mode='max'),
+        TensorBoard(log_dir=f'./Logs/{fname}/')
     ]
     history = model.fit([in_notes, in_durations], [out_notes, out_durations],
                         epochs=epochs, batch_size=batch_size, callbacks=my_callbacks,
-                        verbose=1)
-    model.save("Models/" + model_fname + ".h5")
-    json.dump(history.history, open(f"./History/history_{model_fname}", 'w'))
+                        verbose=2)
+    model.save("Models/" + fname + ".h5")
+    json.dump(history.history, open(f"./History/history_{fname}", 'w'))
     return history
 
 def plot_history(history, plot_fname='training_curves'):
@@ -221,19 +209,21 @@ def play_music(in_fname):
             clock.tick(30) # check if playback has finished
 
 def save_data(fname, in_notes, in_durations, out_notes, out_durations, pitchnames, duration_names):
-    np.save(f'Data/in_notes_{fname}.npy', in_notes)
-    np.save(f'Data/in_durations_{fname}.npy', in_durations)
-    np.save(f'Data/out_notes_{fname}.npy', out_notes)
-    np.save(f'Data/out_durations_{fname}.npy', out_durations)
+    if not os.path.exists(f'Data/{fname}'):
+        os.mkdir(f'Data/{fname}')
+    np.save(f'Data/{fname}/in_notes.npy', in_notes)
+    np.save(f'Data/{fname}/in_durations.npy', in_durations)
+    np.save(f'Data/{fname}/out_notes.npy', out_notes)
+    np.save(f'Data/{fname}/out_durations.npy', out_durations)
 
-    with open(f'Data/pitchnames_{fname}', 'w') as f:
+    with open(f'Data/{fname}/pitchnames', 'w') as f:
         s = ""
         for p in pitchnames:
             s += p + " "
 
         f.write(s[:-1])
 
-    with open(f'Data/duration_names_{fname}', 'w') as f:
+    with open(f'Data/{fname}/duration_names', 'w') as f:
         s = ""
         for d in duration_names:
             s += str(d) + " "
@@ -241,15 +231,15 @@ def save_data(fname, in_notes, in_durations, out_notes, out_durations, pitchname
         f.write(s[:-1])
 
 def load_data(fname):
-    in_notes = np.load(f'Data/in_notes_{fname}.npy')
-    in_durations = np.load(f'Data/in_durations_{fname}.npy')
-    out_notes = np.load(f'Data/out_notes_{fname}.npy')
-    out_durations = np.load(f'Data/out_durations_{fname}.npy')
+    in_notes = np.load(f'Data/{fname}/in_notes.npy')
+    in_durations = np.load(f'Data/{fname}/in_durations.npy')
+    out_notes = np.load(f'Data/{fname}/out_notes.npy')
+    out_durations = np.load(f'Data/{fname}/out_durations.npy')
 
-    with open(f'Data/pitchnames_{fname}', 'r') as f:
+    with open(f'Data/{fname}/pitchnames', 'r') as f:
         pitchnames = [x for x in f.read().split()]
 
-    with open(f'Data/duration_names_{fname}', 'r') as f:
+    with open(f'Data/{fname}/duration_names', 'r') as f:
         duration_names = []
         for x in f.read().split():
             if '.' in x:
@@ -270,9 +260,6 @@ def parse_args():
     argparser.add_argument('-e',  '--Epochs',   help='input name for model, figure, generated music')
     argparser.add_argument('-s',  '--SaveData', action='store_true', help='Save preprocessed data')
     argparser.add_argument('-l',  '--LoadData', action='store_true', help='Load preprocessed data')
-    argparser.add_argument('-g',  '--Generate', action='store_true', default=True, help='generate music')
-    argparser.add_argument('-sm', '--SaveMidi', action='store_true', default=True, help='Save generated music')
-    argparser.add_argument('-lm', '--LoadMidi', action='store_true', default=True, help='Load generated music')
     argparser.add_argument('-u',  '--Use',      help='Use a specific model')
     args = argparser.parse_args()
     if not args.Music:
@@ -291,13 +278,11 @@ def parse_args():
     print(f'\t--Epochs   : {args.Epochs}')
     print(f'\t--SaveData : {args.SaveData}')
     print(f'\t--LoadData : {args.LoadData}')
-    print(f'\t--Generate : {args.Generate}')
-    print(f'\t--SaveMidi : {args.SaveMidi}')
-    print(f'\t--LoadMidi : {args.LoadMidi}')
+    print(f'\t--Use      : {args.Use}')
     print()
     return args, fname
 
-def music_generation_pipeline(lookback=128, epochs=400, batch_size=32, num_notes=100):
+def music_generation_pipeline(lookback=128, epochs=75, batch_size=64, num_notes=250):
     print()
     args, fname = parse_args()
     if args.LoadData:
@@ -318,26 +303,21 @@ def music_generation_pipeline(lookback=128, epochs=400, batch_size=32, num_notes
             except ValueError:
                 pass
         print()
-        model = build_model(in_notes.shape, in_durations.shape, out_notes.shape[1], out_durations.shape[1])
+        model = build_model(lookback, out_notes.shape[1], out_durations.shape[1])
         history = train_model(model, in_notes, in_durations, out_notes, out_durations, epochs, batch_size, fname)
         plot_history(history, fname)
-
-    print("\nFinished training.")
+        print("\nFinished training.")
     
     if args.Use:
         model = load_music_model(args.Use)
     else:
         model = load_music_model(fname)
     print("\nGenerating music.")
-    if args.Generate:
-        generated_music = generate_music(model, in_notes, in_durations, pitchnames, duration_names, num_notes)
-        if args.SaveMidi:
-            print(f"\nSaving midi file at: 'Music/{fname}.mid'")
-            create_midi(generated_music, fname)
-    if args.LoadMidi:
-        print("\nPlaying music.")
-        play_music(fname)
-
+    generated_music = generate_music(model, in_notes, in_durations, pitchnames, duration_names, num_notes)
+    print(f"\nSaving midi file at: 'Music/{fname}.mid'")
+    create_midi(generated_music, fname)
+    print("\nPlaying music.")
+    play_music(fname)
 
 if __name__=="__main__":
     music_generation_pipeline()
