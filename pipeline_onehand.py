@@ -25,7 +25,13 @@ def feature_extraction(folders):
             durations = []
             print("Extracting:", file)
             midi = converter.parse(file)
-            notes_to_parse = instrument.partitionByInstrument(midi).flat
+            parts = instrument.partitionByInstrument(midi)
+            max_length = 0
+            notes_to_parse = None
+            for p in parts.parts:
+                if max_length < len(p):
+                    max_length = len(p)
+                    notes_to_parse = p.notes.stream()
 
             for element in notes_to_parse:
                 if isinstance(element, note.Note):
@@ -34,6 +40,7 @@ def feature_extraction(folders):
                 elif isinstance(element, chord.Chord):
                     notes.append(".".join(str(n) for n in element.normalOrder))
                     durations.append(element.duration.quarterLength)
+
             all_notes.append(notes)
             all_durations.append(durations)
     
@@ -95,24 +102,53 @@ def build_model(lookback, output_size_notes, output_size_durations):
     
     model = Model(inputs=[in_notes, in_durations], outputs=[out_notes, out_durations])
     model.compile(loss=["categorical_crossentropy", "categorical_crossentropy"],
+                  optimizer='rmsprop', # 'adam',
+                  metrics=["accuracy"])
+    print(model.summary())
+    return model
+
+def build_big_model(lookback, output_size_notes, output_size_durations):
+
+    in_notes = Input(shape=(lookback, 1))  # Adjusted input shape for notes
+    in_durations = Input(shape=(lookback, 1))  # Adjusted input shape for durations
+    
+    # Process notes
+    lstm_notes_1 = LSTM(512, return_sequences=True)(in_notes)
+    dropout_notes_1 = Dropout(0.3)(lstm_notes_1)
+    lstm_notes_2 = LSTM(512)(dropout_notes_1)
+    
+    # Process durations
+    lstm_durations_1 = LSTM(512, return_sequences=True)(in_durations)
+    dropout_durations_1 = Dropout(0.3)(lstm_durations_1)
+    lstm_durations_2 = LSTM(512)(dropout_durations_1)
+    
+    # Fusion layer
+    fusion = Concatenate()([lstm_notes_2, lstm_durations_2])
+    dense_fusion = Dense(512)(fusion)
+    dropout_fusion = Dropout(0.3)(dense_fusion)
+
+    # Output layers for notes and durations
+    out_notes = Dense(output_size_notes, activation="softmax", name="notes")(dropout_fusion)
+    out_durations = Dense(output_size_durations, activation="softmax", name="durations")(dropout_fusion)
+    
+    model = Model(inputs=[in_notes, in_durations], outputs=[out_notes, out_durations])
+    model.compile(loss=["categorical_crossentropy", "categorical_crossentropy"],
                   optimizer='adam', # 'rmsprop',
                   metrics=["accuracy"])
     print(model.summary())
     return model
 
-def train_model(model, in_notes, in_durations, out_notes, out_durations, epochs, batch_size, fname='model'):
+def train_model(model, in_notes, in_durations, out_notes, out_durations, epochs, batch_size, fname='model', verbose=2):
     my_callbacks = [
-        ModelCheckpoint(filepath=f'Models/{fname}.best.h5',
+        ModelCheckpoint(filepath=f'Models/{fname}.h5',
                         save_best_only=True,
-                        monitor='notes_accuracy',
-                        mode='max'),
+                        monitor='loss',
+                        mode='min'),
         TensorBoard(log_dir=f'./Logs/{fname}/')
     ]
     history = model.fit([in_notes, in_durations], [out_notes, out_durations],
                         epochs=epochs, batch_size=batch_size, callbacks=my_callbacks,
-                        verbose=2)
-    model.save("Models/" + fname + ".h5")
-    json.dump(history.history, open(f"./History/history_{fname}", 'w'))
+                        verbose=verbose)
     return history
 
 def plot_history(history, plot_fname='training_curves'):
@@ -130,11 +166,11 @@ def plot_history(history, plot_fname='training_curves'):
     plt.savefig("Figures/" + plot_fname + ".png")
     plt.show()
 
-def load_music_model(model_fname='model'):
+def load_music_model(fname='model'):
     try:
-        return load_model("Models/" + model_fname + ".h5")
+        return load_model("Models/" + fname + ".h5")
     except OSError:
-        print(f'Error: could not load "Models/{model_fname}.h5')
+        print(f'Error: could not load "Models/{fname}.h5')
         exit()
     
 def generate_music(model, network_input_notes, network_input_durations, pitchnames, duration_names, num_notes):
@@ -254,35 +290,44 @@ def load_data(fname):
 
 def parse_args():
     argparser = argparse.ArgumentParser()
-    argparser.add_argument('-m',  '--Music',    nargs = '*', help='input mid foldername(s)')
-    argparser.add_argument('-t',  '--Train',    action='store_true', help='input whether to train model')
-    argparser.add_argument('-n',  '--Name',     help='input name for model, figure, generated music')
-    argparser.add_argument('-e',  '--Epochs',   help='input name for model, figure, generated music')
-    argparser.add_argument('-s',  '--SaveData', action='store_true', help='Save preprocessed data')
-    argparser.add_argument('-l',  '--LoadData', action='store_true', help='Load preprocessed data')
-    argparser.add_argument('-u',  '--Use',      help='Use a specific model')
+    argparser.add_argument('-m',  '--Music',     nargs = '*', help='input mid foldername(s)')
+    argparser.add_argument('-t',  '--Train',     action='store_true', help='input whether to train model')
+    argparser.add_argument('-n',  '--Name',      help='input name for model, figure, generated music')
+    argparser.add_argument('-e',  '--Epochs',    help='input name for model, figure, generated music')
+    argparser.add_argument('-s',  '--SaveData',  action='store_true', help='Save preprocessed data')
+    argparser.add_argument('-l',  '--LoadData',  action='store_true', help='Load preprocessed data')
+    argparser.add_argument('-u',  '--Use',       help='Use a specific model')
+    argparser.add_argument('-b',  '--BatchSize', help='Size of training batches')
     args = argparser.parse_args()
     if not args.Music:
-        raise ValueError("Music input music file or files.")
+        if not (args.LoadData and args.Name):
+            raise ValueError("Music input music file or files.")
     
     if args.Name:
         fname = args.Name
-    elif len(args.Music) == 1:
-        fname = args.Music[0].replace('/','_')
     else:
-        fname = ".".join(args.Music).replace('/','_')
+        print('test')
+        if len(args.Music) == 1:
+            fname = args.Music[0].replace('/','_')
+        else:
+            fname = ".".join(args.Music).replace('/','_')
 
-    print(f'\t--Music    : {", ".join(args.Music)}')
-    print(f'\t--Train    : {args.Train}')
-    print(f'\t--Name     : {args.Name}')
-    print(f'\t--Epochs   : {args.Epochs}')
-    print(f'\t--SaveData : {args.SaveData}')
-    print(f'\t--LoadData : {args.LoadData}')
-    print(f'\t--Use      : {args.Use}')
+    if args.Music:
+        print(f'\t--Music    : {", ".join(args.Music)}')
+    else:
+        print(f'\t--Music    : {fname}')
+
+    print(f'\t--Train     : {args.Train}')
+    print(f'\t--Name      : {args.Name}')
+    print(f'\t--Epochs    : {args.Epochs}')
+    print(f'\t--SaveData  : {args.SaveData}')
+    print(f'\t--LoadData  : {args.LoadData}')
+    print(f'\t--Use       : {args.Use}')
+    print(f'\t--BatchSize : {args.BatchSize}')
     print()
     return args, fname
 
-def music_generation_pipeline(lookback=128, epochs=75, batch_size=64, num_notes=250):
+def music_generation_pipeline(lookback=512, epochs=75, batch_size=64, num_notes=200):
     print()
     args, fname = parse_args()
     if args.LoadData:
@@ -302,12 +347,16 @@ def music_generation_pipeline(lookback=128, epochs=75, batch_size=64, num_notes=
                 epochs = int(args.Epochs)
             except ValueError:
                 pass
+        if args.BatchSize:
+            try:
+                batch_size = int(args.BatchSize)
+            except ValueError:
+                pass
         print()
-        model = build_model(lookback, out_notes.shape[1], out_durations.shape[1])
-        history = train_model(model, in_notes, in_durations, out_notes, out_durations, epochs, batch_size, fname)
+        model = build_big_model(lookback, out_notes.shape[1], out_durations.shape[1])
+        history = train_model(model, in_notes, in_durations, out_notes, out_durations, epochs, batch_size, fname, verbose=1)
         plot_history(history, fname)
         print("\nFinished training.")
-    
     if args.Use:
         model = load_music_model(args.Use)
     else:

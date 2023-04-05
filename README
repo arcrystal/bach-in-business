@@ -1,3 +1,11 @@
 Make new data, save the data, train model for 360 epochs, name the output files, generate music and save the midi file
-  $ python pipeline_onehand.py -m 'bach/*' -s -t -e 360 -n bach
+  $ python pipeline_onehand.py -m 'bach/*' -n bach -s -t -e 360 -b 256
   $ tensorboard --logdir ./Logs/bach --port 8080
+
+Installation
+- pip install git+https://github.com/paulgavrikov/visualkeras --upgrade
+- 
+
+To showcase:
+- fug_sin_lb4x_lg
+- 
