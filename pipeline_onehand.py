@@ -298,6 +298,7 @@ def parse_args():
     argparser.add_argument('-l',  '--LoadData',  action='store_true', help='Load preprocessed data')
     argparser.add_argument('-u',  '--Use',       help='Use a specific model')
     argparser.add_argument('-b',  '--BatchSize', help='Size of training batches')
+    argparser.add_argument('-v',  '--Verbose',   help='Size of training batches')
     args = argparser.parse_args()
     if not args.Music:
         if not (args.LoadData and args.Name):
@@ -327,7 +328,7 @@ def parse_args():
     print()
     return args, fname
 
-def music_generation_pipeline(lookback=512, epochs=75, batch_size=64, num_notes=200):
+def music_generation_pipeline(lookback=512, epochs=75, batch_size=64, num_notes=200, verbose=1):
     print()
     args, fname = parse_args()
     if args.LoadData:
@@ -352,9 +353,14 @@ def music_generation_pipeline(lookback=512, epochs=75, batch_size=64, num_notes=
                 batch_size = int(args.BatchSize)
             except ValueError:
                 pass
+        if args.Verbose:
+            try:
+                verbose = int(args.Verbose)
+            except ValueError:
+                pass
         print()
         model = build_big_model(lookback, out_notes.shape[1], out_durations.shape[1])
-        history = train_model(model, in_notes, in_durations, out_notes, out_durations, epochs, batch_size, fname, verbose=1)
+        history = train_model(model, in_notes, in_durations, out_notes, out_durations, epochs, batch_size, fname, verbose=verbose)
         plot_history(history, fname)
         print("\nFinished training.")
     if args.Use:
