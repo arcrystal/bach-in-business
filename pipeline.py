@@ -187,7 +187,7 @@ def generate_music(model, network_input_notes, network_input_durations, pitchnam
 
     return prediction_output
 
-def create_midi(prediction_output, out_fname="music"):
+def create_midi(prediction_output, fname="music"):
     offset = 0
     output_notes = []
 
@@ -213,7 +213,9 @@ def create_midi(prediction_output, out_fname="music"):
         offset += dur
 
     midi_stream = stream.Stream(output_notes)
-    midi_stream.write("midi", fp="Generated/" + out_fname + ".mid")
+    filename = "Generated/" + fname + ".mid"
+    midi_stream.write("mid", fp=filename)
+    return filename
 
 def play_music(in_fname):
         # mixer config
@@ -286,7 +288,7 @@ def parse_args():
     argparser.add_argument('-u',  '--Use',       help='Use a specific model')
     argparser.add_argument('-b',  '--BatchSize', help='Size of training batches')
     argparser.add_argument('-v',  '--Verbose',   help='Size of training batches')
-    argparser.add_argument('-num_notes',  '--NumNotes',   help='Num notes generated')
+    argparser.add_argument('-nn',  '--NumNotes',   help='Num notes generated')
     
     args = argparser.parse_args()
     if not args.Music:
@@ -332,7 +334,7 @@ def music_generation_pipeline(lookback=512, epochs=75, batch_size=64, num_notes=
     if args.SaveData:
         save_data(fname, in_notes, in_durations, out_notes, out_durations, pitchnames, duration_names)
 
-    print("\nLoading data. Shape ", in_notes.shape)
+    print("\nLoading data. Shape:", in_notes.shape)
     if args.NumNotes:
         try:
             num_notes = int(args.NumNotes)
@@ -375,5 +377,16 @@ def music_generation_pipeline(lookback=512, epochs=75, batch_size=64, num_notes=
     print("\nPlaying music.")
     play_music(fname)
 
+def get_music_filename(fname, num_notes=10):
+    in_notes, in_durations, _, _, pitchnames, duration_names = load_data(fname)
+    model = load_music_model(fname)
+    generated_music = generate_music(model, in_notes, in_durations, pitchnames, duration_names, num_notes)
+    midi = create_midi(generated_music, fname)
+    print(midi)
+    play_music(midi)
+    return midi
+
 if __name__=="__main__":
-    music_generation_pipeline()
+    #music_generation_pipeline()
+    get_music_filename('fugues')
+
