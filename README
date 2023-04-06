@@ -3,7 +3,7 @@ Make new data, save the data, train model for 360 epochs, name the output files,
   $ tensorboard --logdir ./Logs/bach --port 8080
 
 Installation
-- pip install git+https://github.com/paulgavrikov/visualkeras --upgrade
+- pip install tensorflow==2.12.0
 - 
 
 To showcase:
