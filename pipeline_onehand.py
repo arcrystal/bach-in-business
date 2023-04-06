@@ -8,7 +8,6 @@ from keras.utils import to_categorical
 from keras.callbacks import ModelCheckpoint, TensorBoard
 from matplotlib import pyplot as plt
 import argparse
-import json
 import contextlib
 from fractions import Fraction
 import os
@@ -95,55 +94,24 @@ def preprocess_data(all_notes, all_durations, lookback=100):
 
     return in_notes, in_durations, out_notes, out_durations, pitchnames, duration_names
 
-def build_model(lookback, output_size_notes, output_size_durations):
+def build_model(lookback, output_size_notes, output_size_durations, n_units=512):
 
     in_notes = Input(shape=(lookback, 1))  # Adjusted input shape for notes
     in_durations = Input(shape=(lookback, 1))  # Adjusted input shape for durations
     
     # Process notes
-    lstm_notes_1 = LSTM(256, return_sequences=True)(in_notes)
+    lstm_notes_1 = LSTM(n_units, return_sequences=True)(in_notes)
     dropout_notes_1 = Dropout(0.3)(lstm_notes_1)
-    lstm_notes_2 = LSTM(256)(dropout_notes_1)
+    lstm_notes_2 = LSTM(n_units)(dropout_notes_1)
     
     # Process durations
-    lstm_durations_1 = LSTM(256, return_sequences=True)(in_durations)
+    lstm_durations_1 = LSTM(n_units, return_sequences=True)(in_durations)
     dropout_durations_1 = Dropout(0.3)(lstm_durations_1)
-    lstm_durations_2 = LSTM(256)(dropout_durations_1)
+    lstm_durations_2 = LSTM(n_units)(dropout_durations_1)
     
     # Fusion layer
     fusion = Concatenate()([lstm_notes_2, lstm_durations_2])
-    dense_fusion = Dense(256)(fusion)
-    dropout_fusion = Dropout(0.3)(dense_fusion)
-
-    # Output layers for notes and durations
-    out_notes = Dense(output_size_notes, activation="softmax", name="notes")(dropout_fusion)
-    out_durations = Dense(output_size_durations, activation="softmax", name="durations")(dropout_fusion)
-    
-    model = Model(inputs=[in_notes, in_durations], outputs=[out_notes, out_durations])
-    model.compile(loss=["categorical_crossentropy", "categorical_crossentropy"],
-                  optimizer='rmsprop', # 'adam',
-                  metrics=["accuracy"])
-    print(model.summary())
-    return model
-
-def build_big_model(lookback, output_size_notes, output_size_durations):
-
-    in_notes = Input(shape=(lookback, 1))  # Adjusted input shape for notes
-    in_durations = Input(shape=(lookback, 1))  # Adjusted input shape for durations
-    
-    # Process notes
-    lstm_notes_1 = LSTM(512, return_sequences=True)(in_notes)
-    dropout_notes_1 = Dropout(0.3)(lstm_notes_1)
-    lstm_notes_2 = LSTM(512)(dropout_notes_1)
-    
-    # Process durations
-    lstm_durations_1 = LSTM(512, return_sequences=True)(in_durations)
-    dropout_durations_1 = Dropout(0.3)(lstm_durations_1)
-    lstm_durations_2 = LSTM(512)(dropout_durations_1)
-    
-    # Fusion layer
-    fusion = Concatenate()([lstm_notes_2, lstm_durations_2])
-    dense_fusion = Dense(512)(fusion)
+    dense_fusion = Dense(n_units)(fusion)
     dropout_fusion = Dropout(0.3)(dense_fusion)
 
     # Output layers for notes and durations
@@ -360,8 +328,18 @@ def music_generation_pipeline(lookback=512, epochs=75, batch_size=64, num_notes=
     if args.SaveData:
         save_data(fname, in_notes, in_durations, out_notes, out_durations, pitchnames, duration_names)
 
-    print("\nLoading data...\nInput Shapes: ", in_notes.shape, in_durations.shape)
+    print("\nLoading data. Shape ", in_notes.shape)
+    if args.NumNotes:
+        try:
+            num_notes = int(args.NumNotes)
+        except ValueError:
+            pass
     if args.Train:
+        if args.Lookback:
+            try:
+                lookback = int(args.Lookback)
+            except ValueError:
+                pass
         if args.Epochs:
             try:
                 epochs = int(args.Epochs)
@@ -378,7 +356,7 @@ def music_generation_pipeline(lookback=512, epochs=75, batch_size=64, num_notes=
             except ValueError:
                 pass
         print()
-        model = build_big_model(lookback, out_notes.shape[1], out_durations.shape[1])
+        model = build_model(lookback, out_notes.shape[1], out_durations.shape[1])
         history = train_model(model, in_notes, in_durations, out_notes, out_durations, epochs, batch_size, fname, verbose=verbose)
         plot_history(history, fname)
         print("\nFinished training.")
