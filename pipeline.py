@@ -286,6 +286,8 @@ def parse_args():
     argparser.add_argument('-u',  '--Use',       help='Use a specific model')
     argparser.add_argument('-b',  '--BatchSize', help='Size of training batches')
     argparser.add_argument('-v',  '--Verbose',   help='Size of training batches')
+    argparser.add_argument('-num_notes',  '--NumNotes',   help='Num notes generated')
+    
     args = argparser.parse_args()
     if not args.Music:
         if not (args.LoadData and args.Name):
@@ -312,6 +314,8 @@ def parse_args():
     print(f'\t--LoadData  : {args.LoadData}')
     print(f'\t--Use       : {args.Use}')
     print(f'\t--BatchSize : {args.BatchSize}')
+    print(f'\t--NumNotes  : {args.NumNotes}')
+    print(f'\t--Verbose   : {args.Verbose}')
     print()
     return args, fname
 
