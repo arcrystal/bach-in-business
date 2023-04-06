@@ -15,23 +15,42 @@ import os
 with contextlib.redirect_stdout(None):
     import pygame
 
+def flatten_midi(file):
+    midi = converter.parse(file)
+    parts = instrument.partitionByInstrument(midi)
+    try:
+        for p in parts.recurse():
+            if 'Instrument' in p.classes: # or 'Piano'
+                p.activeSite.replace(p, instrument.Piano())
+    except:
+        for p in parts.parts:
+            p.insert(0, instrument.Piano())
 
-def feature_extraction(folders):
+    return parts.flatten()
+
+def feature_extraction(folders, flatten=False):
     all_notes = []
     all_durations = []
     for folder in folders:
-        for file in glob.glob("Music/"+ folder + "/*.mid"):
+        if '.mid' in folder:
+            files = ["Music/"+ folder]
+        else:
+            files = glob.glob("Music/"+ folder + "/*.mid")
+        for file in files:
             notes = []
             durations = []
             print("Extracting:", file)
-            midi = converter.parse(file)
-            parts = instrument.partitionByInstrument(midi)
-            max_length = 0
-            notes_to_parse = None
-            for p in parts.parts:
-                if max_length < len(p):
-                    max_length = len(p)
-                    notes_to_parse = p.notes.stream()
+            if flatten:
+                notes_to_parse = flatten_midi(file)
+            else:
+                midi = converter.parse(file)
+                parts = instrument.partitionByInstrument(midi)
+                max_length = 0
+                notes_to_parse = None
+                for p in parts.parts:
+                    if max_length < len(p):
+                        max_length = len(p)
+                        notes_to_parse = p.notes.stream()
 
             for element in notes_to_parse:
                 if isinstance(element, note.Note):
@@ -314,9 +333,9 @@ def parse_args():
             fname = ".".join(args.Music).replace('/','_')
 
     if args.Music:
-        print(f'\t--Music    : {", ".join(args.Music)}')
+        print(f'\t--Music     : {", ".join(args.Music)}')
     else:
-        print(f'\t--Music    : {fname}')
+        print(f'\t--Music     : {fname}')
 
     print(f'\t--Train     : {args.Train}')
     print(f'\t--Name      : {args.Name}')
