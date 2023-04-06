@@ -377,7 +377,7 @@ def music_generation_pipeline(lookback=512, epochs=75, batch_size=64, num_notes=
     print("\nPlaying music.")
     play_music(fname)
 
-def get_music_filename(fname, num_notes=10):
+def get_music_filename(fname, num_notes):
     in_notes, in_durations, _, _, pitchnames, duration_names = load_data(fname)
     model = load_music_model(fname)
     generated_music = generate_music(model, in_notes, in_durations, pitchnames, duration_names, num_notes)
