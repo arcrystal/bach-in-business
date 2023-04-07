@@ -1,19 +1,22 @@
 import { useState } from "react";
 import "./App.css";
 import axios from "axios";
+import { CircularProgress } from "@mui/material";
+import "./fonts/Merriweather-Regular.ttf";
 
 function App() {
-  const [musicData, setMusicData] = useState(null);
+  const [midiFilename, setMidiFilename] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   function getData() {
+    setIsLoading(true);
     axios({
       method: "GET",
       url: "http://127.0.0.1:5000/get_music",
     })
-      .then((response: { data: { name: any } }) => {
-        const res = response.data.name;
-        alert(res);
-        setMusicData(res);
+      .then((response: { data: { filename: any } }) => {
+        setMidiFilename(response.data.filename);
+        setIsLoading(false);
       })
       .catch((error: { response: { status: any; headers: any } }) => {
         if (error.response) {
@@ -25,15 +28,39 @@ function App() {
   }
 
   return (
-    <div className="App">
-      <header className="App-header">
-        <div onClick={() => getData()}>Press</div>
-        {musicData && (
+    <div
+      style={{
+        height: "100vh",
+        backgroundColor: "#82beff",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "flex-start",
+          height: "60vh",
+        }}
+      >
+        <div className="Button" onClick={() => getData()}>
+          <div>Generate</div>
+        </div>
+
+        <div hidden={!isLoading}>
+          <CircularProgress />
+        </div>
+
+        {midiFilename && (
           <div>
-            <p>name: {musicData}</p>
+            <p>name: {midiFilename}</p>
           </div>
         )}
-      </header>
+      </div>
     </div>
   );
 }
