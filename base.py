@@ -7,7 +7,7 @@ CORS(api)
 
 @api.route('/get_music')
 def my_get_music():
-    #filepath = get_music_filename('fugues')
+    #filepath = get_music_filename(fname='fugues', num_notes=10)
 
     return {
         #"filepath": filepath
