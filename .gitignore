@@ -140,3 +140,5 @@ Logs/
 Deliverables/
 Figures/
 .DS_Store
+backend/env
+backend/__pycache__
