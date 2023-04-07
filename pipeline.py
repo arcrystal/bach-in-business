@@ -11,6 +11,7 @@ import argparse
 import contextlib
 from fractions import Fraction
 import os
+import re
 with contextlib.redirect_stdout(None):
     import pygame
 
@@ -214,10 +215,15 @@ def create_midi(prediction_output, fname="music"):
 
     midi_stream = stream.Stream(output_notes)
     filename = "Generated/" + fname + ".mid"
+    i = 2
+    while(os.path.exists(filename)):
+        filename = "Generated/" + fname + f"{i}.mid"
+        i += 1
+
     midi_stream.write("mid", fp=filename)
     return filename
 
-def play_music(in_fname):
+def play_music(fname):
         # mixer config
         freq = 44100  # audio CD quality
         bitsize = -16   # unsigned 16 bit
@@ -226,7 +232,7 @@ def play_music(in_fname):
         pygame.mixer.init(freq, bitsize, channels, buffer)
         clock = pygame.time.Clock()
         try:
-            pygame.mixer.music.load("Generated/" + in_fname + '.mid')
+            pygame.mixer.music.load(fname)
         except:
             return
         pygame.mixer.music.play()
@@ -288,7 +294,7 @@ def parse_args():
     argparser.add_argument('-u',  '--Use',       help='Use a specific model')
     argparser.add_argument('-b',  '--BatchSize', help='Size of training batches')
     argparser.add_argument('-v',  '--Verbose',   help='Size of training batches')
-    argparser.add_argument('-nn',  '--NumNotes',   help='Num notes generated')
+    argparser.add_argument('-nn', '--NumNotes',   help='Num notes generated')
     
     args = argparser.parse_args()
     if not args.Music:
@@ -335,32 +341,19 @@ def music_generation_pipeline(lookback=512, epochs=75, batch_size=64, num_notes=
         save_data(fname, in_notes, in_durations, out_notes, out_durations, pitchnames, duration_names)
 
     print("\nLoading data. Shape:", in_notes.shape)
-    if args.NumNotes:
-        try:
-            num_notes = int(args.NumNotes)
-        except ValueError:
-            pass
+    if args.NumNotes.isdigit():
+        num_notes = int(args.NumNotes)
+
     if args.Train:
-        if args.Lookback:
-            try:
-                lookback = int(args.Lookback)
-            except ValueError:
-                pass
-        if args.Epochs:
-            try:
-                epochs = int(args.Epochs)
-            except ValueError:
-                pass
-        if args.BatchSize:
-            try:
-                batch_size = int(args.BatchSize)
-            except ValueError:
-                pass
-        if args.Verbose:
-            try:
-                verbose = int(args.Verbose)
-            except ValueError:
-                pass
+        if args.Lookback.isdigit():
+            lookback = int(args.Lookback)
+        if args.Epochs.isdigit():
+            epochs = int(args.Epochs)
+        if args.BatchSize.isdigit():
+            batch_size = int(args.BatchSize)
+        if args.Verbose.isdigit():
+            verbose = int(args.Verbose)
+
         print()
         model = build_model(lookback, out_notes.shape[1], out_durations.shape[1])
         history = train_model(model, in_notes, in_durations, out_notes, out_durations, epochs, batch_size, fname, verbose=verbose)
@@ -372,10 +365,10 @@ def music_generation_pipeline(lookback=512, epochs=75, batch_size=64, num_notes=
         model = load_music_model(fname)
     print("\nGenerating music.")
     generated_music = generate_music(model, in_notes, in_durations, pitchnames, duration_names, num_notes)
-    print(f"\nSaving midi file at: 'Music/{fname}.mid'")
-    create_midi(generated_music, fname)
+    f = create_midi(generated_music, fname)
+    print(f"Saved midi file at: '{f}'")
     print("\nPlaying music.")
-    play_music(fname)
+    play_music(f)
 
 def get_music_filename(fname, num_notes):
     in_notes, in_durations, _, _, pitchnames, duration_names = load_data(fname)
@@ -387,6 +380,6 @@ def get_music_filename(fname, num_notes):
     return midi
 
 if __name__=="__main__":
-    #music_generation_pipeline()
-    get_music_filename('fugues')
+    music_generation_pipeline()
+    #get_music_filename('fugues', 100)
 

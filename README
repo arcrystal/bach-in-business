@@ -5,8 +5,4 @@ Make new data, save the data, train model for 360 epochs, name the output files,
 Environment
 - conda create -n music python=3.10
 - conda activate music
-- pip install --upgrade tensorflow-macos tensorflow-metal matplotlib music21 flask flask_cors
-
-To showcase:
-- 
-- 
+- pip install -r requirements.txt

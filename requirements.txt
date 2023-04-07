@@ -1,0 +1,6 @@
+tensorflow-macos
+tensorflow-metal
+matplotlib
+music21
+flask
+flask_cors
