@@ -1,17 +1,21 @@
 
-import glob
-import numpy as np
-from music21 import converter, instrument, note, chord, stream, duration, midi
-from keras.models import Model, load_model
-from keras.layers import LSTM, Dense, Dropout, Input, Concatenate
-from keras.utils import to_categorical
+from music21 import converter, instrument, note, chord, stream, duration
+
 from keras.callbacks import ModelCheckpoint, TensorBoard
+from keras.layers import LSTM, Dense, Dropout, Input, Concatenate
+from keras.models import Model, load_model
+from keras.utils import to_categorical
+
+import numpy as np
 from matplotlib import pyplot as plt
-import argparse
-import contextlib
 from fractions import Fraction
+
+import glob
+import argparse
 import os
-with contextlib.redirect_stdout(None):
+
+from contextlib import redirect_stdout
+with redirect_stdout(None):
     import pygame
 
 def flatten_midi(file):
