@@ -51,6 +51,7 @@ def extract(folders, flatten=True):
                         max_length = len(p)
                         notes_to_parse = p.notes.stream()
 
+
             for element in notes_to_parse:
                 if isinstance(element, note.Note):
                     notes.append(str(element.pitch))
@@ -305,7 +306,6 @@ def parse_args():
     if args.Name:
         fname = args.Name
     else:
-        print('test')
         if len(args.Music) == 1:
             fname = args.Music[0].replace('/','_')
         else:
