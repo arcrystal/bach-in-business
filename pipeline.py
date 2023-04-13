@@ -1,7 +1,7 @@
 
 import glob
 import numpy as np
-from music21 import converter, instrument, note, chord, stream, duration
+from music21 import converter, instrument, note, chord, stream, duration, midi
 from keras.models import Model, load_model
 from keras.layers import LSTM, Dense, Dropout, Input, Concatenate
 from keras.utils import to_categorical
@@ -36,8 +36,6 @@ def extract(folders, flatten=True):
         else:
             files = glob.glob("Music/"+ folder + "/*.mid")
         for file in files:
-            notes = []
-            durs = []
             print("Extracting:", file)
             if flatten:
                 notes_to_parse = flatten_midi(file)
@@ -51,19 +49,29 @@ def extract(folders, flatten=True):
                         max_length = len(p)
                         notes_to_parse = p.notes.stream()
 
+            for one_key_notes in transpose_to_all_keys(notes_to_parse):
+                notes = []
+                durs = []
+                for element in one_key_notes:
+                    if isinstance(element, note.Note):
+                        notes.append(str(element.pitch))
+                        durs.append(element.duration.quarterLength)
+                    elif isinstance(element, chord.Chord):
+                        notes.append(".".join(str(n) for n in element.normalOrder))
+                        durs.append(element.duration.quarterLength)
 
-            for element in notes_to_parse:
-                if isinstance(element, note.Note):
-                    notes.append(str(element.pitch))
-                    durs.append(element.duration.quarterLength)
-                elif isinstance(element, chord.Chord):
-                    notes.append(".".join(str(n) for n in element.normalOrder))
-                    durs.append(element.duration.quarterLength)
+                all_notes.append(notes)
+                all_durs.append(durs)
 
-            all_notes.append(notes)
-            all_durs.append(durs)
-    
     return all_notes, all_durs
+
+def transpose_to_all_keys(notes_to_parse):
+    notes = [notes_to_parse]
+    for halfSteps in range(1,12):
+        one_key_notes = notes_to_parse.transpose(halfSteps)
+        notes.append(one_key_notes)
+    
+    return notes
 
 def transform(all_notes, all_durs, lookback=100):
     pitchnames = sorted(set(item for notes in all_notes for item in notes))
@@ -122,7 +130,8 @@ def build_model(lookback, output_size_notes, output_size_durs, n_units=512):
     model = Model(inputs=[in_notes, in_durs], outputs=[out_notes, out_durs])
     model.compile(loss=["categorical_crossentropy", "categorical_crossentropy"],
                   optimizer='adam', # 'rmsprop',
-                  metrics=["accuracy"])
+                  metrics=["accuracy"],
+                  loss_weights=[1, 0.05]) # 12 transposed keys have same durations (should be >=12x)
     print(model.summary())
     return model
 
@@ -163,7 +172,10 @@ def load_music_model(fname='model'):
         exit()
     
 def generate_music(model, in_notes, in_durs, pitchnames, dur_names, num_notes):
-    start = np.random.randint(0, len(in_notes) - 1)
+    if len(in_notes) < 100:
+        start = np.random.randint(0, len(in_notes) - 1)
+    else:
+        start = np.random.randint(50, len(in_notes) - 50)
     int_to_note = {number:note for number, note in enumerate(pitchnames)}
     int_to_dur = {number:dur for number, dur in enumerate(dur_names)}
 
@@ -292,7 +304,7 @@ def parse_args():
     argparser.add_argument('-e',  '--Epochs',    help='Number of training epochs')
     argparser.add_argument('-s',  '--SaveData',  action='store_true', help='Save preprocessed data')
     argparser.add_argument('-l',  '--LoadData',  action='store_true', help='Load preprocessed data')
-    argparser.add_argument('-u',  '--Use',       help='Use a specific model')
+    argparser.add_argument('-u',  '--Use',       action='store_true', help='Use a specific model')
     argparser.add_argument('-b',  '--BatchSize', help='Size of training batches')
     argparser.add_argument('-v',  '--Verbose',   help='Tensorflow model fitting parameter')
     argparser.add_argument('-nn', '--NumNotes',  help='Number of notes generated')
@@ -374,8 +386,8 @@ def music_generation_pipeline(lookback=512, epochs=75, batch_size=64, num_notes=
                 pass
 
         print()
-        if args.Use:
-            model = load_music_model(args.Use)
+        if args.Use and args.Name:
+            model = load_music_model(args.Name)
         else:
             model = build_model(lookback, out_notes.shape[1], out_durs.shape[1])
 
@@ -383,8 +395,8 @@ def music_generation_pipeline(lookback=512, epochs=75, batch_size=64, num_notes=
                               epochs, batch_size, fname, verbose)
         plot_history(history, fname)
         print("\nFinished training.")
-    if args.Use:
-        model = load_music_model(args.Use)
+    if args.Use and args.Name:
+        model = load_music_model(args.Name)
     else:
         model = load_music_model(fname)
     print("\nGenerating music.")
