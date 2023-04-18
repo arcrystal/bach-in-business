@@ -1,6 +1,7 @@
 
 from music21 import converter, instrument, note, chord, stream, duration
 
+from tensorflow import config
 from keras.callbacks import ModelCheckpoint, TensorBoard
 from keras.layers import LSTM, Dense, Dropout, Input, Concatenate
 from keras.models import Model, load_model
@@ -19,6 +20,9 @@ with redirect_stdout(None):
     import pygame
 
 def flatten_midi(file):
+    """
+    Flattens a multi-track midi file into a single track.
+    """
     midi = converter.parse(file)
     parts = instrument.partitionByInstrument(midi)
     try:
@@ -31,7 +35,23 @@ def flatten_midi(file):
 
     return parts.flatten()
 
+def transpose_for_all_keys(notes_to_parse):
+    """
+    Takes a music21 stream and transposes it into each key.
+    Returns a list of streams- one for each unique key.
+    """
+    notes = [notes_to_parse]
+    for halfSteps in range(1,12):
+        one_key_notes = notes_to_parse.transpose(halfSteps)
+        notes.append(one_key_notes)
+    
+    return notes
+
 def extract(folders, flatten=True):
+    """
+    Takes a set of files and returns a list of lists of notes.
+    One for each file for each key.
+    """
     all_notes = []
     all_durs = []
     for folder in folders:
@@ -53,7 +73,7 @@ def extract(folders, flatten=True):
                         max_length = len(p)
                         notes_to_parse = p.notes.stream()
 
-            for one_key_notes in transpose_to_all_keys(notes_to_parse):
+            for one_key_notes in transpose_for_all_keys(notes_to_parse):
                 notes = []
                 durs = []
                 for element in one_key_notes:
@@ -68,14 +88,6 @@ def extract(folders, flatten=True):
                 all_durs.append(durs)
 
     return all_notes, all_durs
-
-def transpose_to_all_keys(notes_to_parse):
-    notes = [notes_to_parse]
-    for halfSteps in range(1,12):
-        one_key_notes = notes_to_parse.transpose(halfSteps)
-        notes.append(one_key_notes)
-    
-    return notes
 
 def transform(all_notes, all_durs, lookback=100):
     pitchnames = sorted(set(item for notes in all_notes for item in notes))
@@ -110,7 +122,7 @@ def transform(all_notes, all_durs, lookback=100):
 def build_model(lookback, output_size_notes, output_size_durs, n_units=512):
 
     in_notes = Input(shape=(lookback, 1))  # Adjusted input shape for notes
-    in_durs = Input(shape=(lookback, 1))  # Adjusted input shape for durs
+    in_durs = Input(shape=(lookback, 1))  # Adjusted input shape for durations
     
     # Process notes
     lstm_notes_1 = LSTM(n_units, return_sequences=True)(in_notes)
@@ -135,7 +147,7 @@ def build_model(lookback, output_size_notes, output_size_durs, n_units=512):
     model.compile(loss=["categorical_crossentropy", "categorical_crossentropy"],
                   optimizer='adam', # 'rmsprop',
                   metrics=["accuracy"],
-                  loss_weights=[1, 0.05]) # 12 transposed keys have same durations (should be >=12x)
+                  loss_weights=[1, 0.04]) # 12 transposed keys have same durs
     print(model.summary())
     return model
 
@@ -148,6 +160,7 @@ def train_model(model, in_notes, in_durs, out_notes, out_durs,
                         mode='min'),
         TensorBoard(log_dir=f'./Logs/{fname}/')
     ]
+
     history = model.fit([in_notes, in_durs], [out_notes, out_durs],
                         epochs=epochs, batch_size=batch_size, callbacks=my_callbacks,
                         verbose=verbose)
@@ -313,6 +326,7 @@ def parse_args():
     argparser.add_argument('-v',  '--Verbose',   help='Tensorflow model fitting parameter')
     argparser.add_argument('-nn', '--NumNotes',  help='Number of notes generated')
     argparser.add_argument('-lb', '--Lookback',  help='Lookback of model architecture')
+    argparser.add_argument('-cpu','--cpu',       action='store_true', help='Use CPU for training')
     
     args = argparser.parse_args()
     if not args.Music:
@@ -329,8 +343,6 @@ def parse_args():
 
     if args.Music:
         print(f'\t--Music      : {", ".join(args.Music)}')
-    else:
-        print(f'\t--Music      : {fname}')
 
     print(f'\t--Train      : {args.Train}')
     print(f'\t--Name       : {args.Name}')
@@ -342,12 +354,16 @@ def parse_args():
     print(f'\t--NumNotes   : {args.NumNotes}')
     print(f'\t--Verbose    : {args.Verbose}')
     print(f'\t--Lookback   : {args.Lookback}')
+    print(f'\t--CPU        : {args.cpu}')
     print()
     return args, fname
 
 def music_generation_pipeline(lookback=512, epochs=75, batch_size=64, num_notes=200, verbose=1):
     print()
     args, fname = parse_args()
+    if args.cpu:
+        config.set_visible_devices([], 'GPU')
+
     if args.Lookback:
         try:
             lookback = int(args.Lookback)
@@ -421,5 +437,4 @@ def get_music_filename(fname, num_notes):
 
 if __name__=="__main__":
     music_generation_pipeline()
-    #get_music_filename('fugues', 100)
 
