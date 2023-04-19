@@ -1,5 +1,6 @@
 
 from music21 import converter, instrument, note, chord, stream, duration
+from midi2audio import FluidSynth
 
 from tensorflow import config
 from keras.callbacks import ModelCheckpoint, TensorBoard
@@ -14,8 +15,8 @@ from fractions import Fraction
 import glob
 import argparse
 import os
-
 from contextlib import redirect_stdout
+
 with redirect_stdout(None):
     import pygame
 
@@ -47,7 +48,7 @@ def transpose_for_all_keys(notes_to_parse):
     
     return notes
 
-def extract(folders, flatten=True):
+def extract(folders, flatten=True, transpose=False):
     """
     Takes a set of files and returns a list of lists of notes.
     One for each file for each key.
@@ -72,11 +73,22 @@ def extract(folders, flatten=True):
                     if max_length < len(p):
                         max_length = len(p)
                         notes_to_parse = p.notes.stream()
+            if transpose:
+                for one_key_notes in transpose_for_all_keys(notes_to_parse):
+                    notes = []
+                    durs = []
+                    for element in one_key_notes:
+                        if isinstance(element, note.Note):
+                            notes.append(str(element.pitch))
+                            durs.append(element.duration.quarterLength)
+                        elif isinstance(element, chord.Chord):
+                            notes.append(".".join(str(n) for n in element.normalOrder))
+                            durs.append(element.duration.quarterLength)
 
-            for one_key_notes in transpose_for_all_keys(notes_to_parse):
-                notes = []
-                durs = []
-                for element in one_key_notes:
+                    all_notes.append(notes)
+                    all_durs.append(durs)
+            else:
+                for element in notes_to_parse:
                     if isinstance(element, note.Note):
                         notes.append(str(element.pitch))
                         durs.append(element.duration.quarterLength)
@@ -147,7 +159,7 @@ def build_model(lookback, output_size_notes, output_size_durs, n_units=512):
     model.compile(loss=["categorical_crossentropy", "categorical_crossentropy"],
                   optimizer='adam', # 'rmsprop',
                   metrics=["accuracy"],
-                  loss_weights=[1, 0.04]) # 12 transposed keys have same durs
+                  loss_weights=[1, 0.05]) # 12 transposed keys have same durs
     print(model.summary())
     return model
 
@@ -251,6 +263,10 @@ def create_midi(prediction_output, fname="music"):
         i += 1
 
     midi_stream.write("mid", fp=filename)
+    out_wav = filename.split('.')[0]+'.wav'
+    soundfont = 'FluidR3_GM.sf2'  # TODO: Change this file
+    fs = FluidSynth(sound_font=soundfont)
+    fs.midi_to_audio(filename, out_wav)
     return filename
 
 def play_music(fname):

@@ -142,3 +142,4 @@ Figures/
 .DS_Store
 backend/env
 backend/__pycache__
+*.sf2
