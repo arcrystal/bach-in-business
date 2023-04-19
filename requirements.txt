@@ -4,5 +4,4 @@ matplotlib
 music21
 flask
 flask_cors
-pretty_midi
-librosa
+midi2audio
