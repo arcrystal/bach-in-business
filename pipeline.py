@@ -88,6 +88,8 @@ def extract(folders, flatten=True, transpose=False):
                     all_notes.append(notes)
                     all_durs.append(durs)
             else:
+                notes = []
+                durs = []
                 for element in notes_to_parse:
                     if isinstance(element, note.Note):
                         notes.append(str(element.pitch))
@@ -131,7 +133,7 @@ def transform(all_notes, all_durs, lookback=100):
 
     return in_notes, in_durs, out_notes, out_durs, pitchnames, dur_names
 
-def build_model(lookback, output_size_notes, output_size_durs, n_units=512):
+def build_model(lookback, output_size_notes, output_size_durs, n_units=512, summary=True):
 
     in_notes = Input(shape=(lookback, 1))  # Adjusted input shape for notes
     in_durs = Input(shape=(lookback, 1))  # Adjusted input shape for durations
@@ -160,7 +162,8 @@ def build_model(lookback, output_size_notes, output_size_durs, n_units=512):
                   optimizer='adam', # 'rmsprop',
                   metrics=["accuracy"],
                   loss_weights=[1, 0.05]) # 12 transposed keys have same durs
-    print(model.summary())
+    if summary:
+        print(model.summary())
     return model
 
 def train_model(model, in_notes, in_durs, out_notes, out_durs,
@@ -451,6 +454,26 @@ def get_music_filename(fname, num_notes):
     play_music(midi)
     return midi
 
+def get_info():
+    folders = ['can','cellosui','cnt','dou','fugues',
+               'invent','inver','mir','other',
+               'partitas','prelude','reg','sinfon','tri']
+    for folder in folders:
+        folder = 'bach/' + folder
+        print(folder)
+        n, d = extract([folder], transpose=False)
+        x1, x2, y1, y2, _, _ = transform(n, d)
+        m1 = build_model(128, y1.shape[1], y2.shape[1], n_units=128, summary=False)
+        m2 = build_model(512, y1.shape[1], y2.shape[1], n_units=512, summary=False)
+        print(x1.shape[0], y1.shape[1], y2.shape[1], np.sum([np.prod(var.shape) for var in m1.trainable_variables]).item(), np.sum([np.prod(var.shape) for var in m2.trainable_variables]).item())
+        print()
+        print()
+
 if __name__=="__main__":
     music_generation_pipeline()
+    
+
+    
+
+        
 
