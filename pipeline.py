@@ -462,7 +462,7 @@ def get_info():
         folder = 'bach/' + folder
         print(folder)
         n, d = extract([folder], transpose=False)
-        x1, x2, y1, y2, _, _ = transform(n, d)
+        x1, _, y1, y2, _, _ = transform(n, d)
         m1 = build_model(128, y1.shape[1], y2.shape[1], n_units=128, summary=False)
         m2 = build_model(512, y1.shape[1], y2.shape[1], n_units=512, summary=False)
         print(x1.shape[0], y1.shape[1], y2.shape[1], np.sum([np.prod(var.shape) for var in m1.trainable_variables]).item(), np.sum([np.prod(var.shape) for var in m2.trainable_variables]).item())
