@@ -129,8 +129,6 @@ dmypy.json
 .pyre/
 
 # Other
-*.docx
-*.pptx
 Music/
 Models/
 Data/
@@ -140,6 +138,3 @@ Logs/
 Deliverables/
 Figures/
 .DS_Store
-backend/env
-backend/__pycache__
-*.sf2
