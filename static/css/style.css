@@ -17,6 +17,14 @@ body {
   .form-label {
     font-weight: 500;
   }
+
+.form-options {
+    display: flex;
+    flex-direction: column;
+    align-items: left;
+    gap: 10px;
+}
+
   
   .btn-primary {
     background-color: #5184b7;
@@ -159,5 +167,42 @@ midi-visualizer {
   }
 
 .content-container.sidebar-adjacent {
-    margin-left: 25px;
+    margin-left: 15px;
+}
+
+.model-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  grid-gap: 16px;
+  justify-items: left;
+  margin-top: 1rem;
+}
+
+.model-wrapper {
+  position: relative;
+  width: 150px;
+  height: 150px;
+}
+
+.model-button {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 12px;
+  background-color: #5184b7;
+  color: white;
+  font-size: 18px;
+  font-weight: bold;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: all 0.3s;
+}
+
+.model-button:hover {
+  background-color: #2161a2;
+  box-shadow: 0 0 10px #2161a2;
+  transform: translateY(-3px);
 }

@@ -17,15 +17,15 @@
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
             const formData = new FormData(form);
-            const response = await fetch("{{ url_for('run_pipeline') }}", {
+            const response = await fetch("{{ url_for('train') }}", {
                 method: 'POST',
                 body: formData
             });
 
             if (response.ok) {
-                console.log("Pipeline action submitted");
+                console.log("Training instance submitted");
             } else {
-                console.error("Error submitting pipeline action");
+                console.error("Error submitting training instance");
             }
         });
 
@@ -52,12 +52,14 @@
     <button class="hamburger" onclick="toggleSidebar()">&#9776;</button>
     <nav class="sidebar" id="sidebar">
         <ul class="nav flex-column">
-            <li class="nav-item"><a class="nav-link" href="{{ url_for('home') }}">Home</a></li>
-            <li class="nav-item"><a class="nav-link" href="{{ url_for('pipeline_page') }}">Pipeline</a></li>
+            <li><a class="nav-link" href="{{ url_for('home') }}">Home</a></li>
+            <li><a class="nav-link" href="{{ url_for('train') }}">Train Model</a></li>
+            <li><a class="nav-link" href="{{ url_for('generate') }}">Generate Music</a></li>
+            <!-- Add more navigation items here -->
         </ul>
     </nav>
     <div class="container content-container" id="content-container">
-        <form action="{{ url_for('run_pipeline') }}" method="post" onsubmit="return validateForm();">
+        <form action="{{ url_for('train_model') }}" method="post" onsubmit="return validateForm();">
 
             <!-- String input for music folder name -->
             <div class="mb-3">
@@ -87,12 +89,6 @@
             <div class="mb-3">
                 <label for="epochs" class="form-label">Epochs</label>
                 <input type="number" class="form-control" min="1" max="500" step="1" value="75" name="epochs" id="epochs">
-            </div>
-
-            <!-- Integer input for number of notes -->
-            <div class="mb-3">
-                <label for="num_notes" class="form-label">Number of Notes</label>
-                <input type="number" class="form-control" min="10" max="400" step="10" value="100" name="num_notes" id="num_notes">
             </div>
 
             <!-- Integer input for lookback -->
@@ -126,7 +122,6 @@
             </div>
             <div class="d-flex flex-column align-items-start">
                 <button type="submit" class="btn btn-primary mb-2" name="action" value="train">Train Model</button>
-                <button type="submit" class="btn btn-primary mb-4" name="action" value="generate">Generate Music</button>
             </div>
         </form>
     </div>

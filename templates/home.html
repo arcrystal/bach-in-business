@@ -23,7 +23,8 @@
     <nav class="sidebar" id="sidebar">
         <ul class="nav flex-column">
             <li><a class="nav-link" href="{{ url_for('home') }}">Home</a></li>
-            <li><a class="nav-link" href="{{ url_for('pipeline_page') }}">Pipeline</a></li>
+            <li><a class="nav-link" href="{{ url_for('train') }}">Train Model</a></li>
+            <li><a class="nav-link" href="{{ url_for('generate') }}">Generate Music</a></li>
             <!-- Add more navigation items here -->
         </ul>
     </nav>
@@ -37,6 +38,7 @@
             </div>
         </div>
         {% endfor %}
+
     </div>
 </body>
 </html>

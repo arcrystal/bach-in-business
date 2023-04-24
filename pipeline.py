@@ -58,7 +58,6 @@ def extract(folders, flatten=True, transpose=False):
             files = ["static/Music/"+ folder]
         else:
             files = glob.glob("static/Music/"+ folder + "/*.mid")
-        print(files)
         for file in files:
             print("Extracting:", file)
             if flatten:
@@ -200,7 +199,7 @@ def load_music_model(fname='model'):
     try:
         return load_model("static/Models/" + fname + ".h5")
     except OSError:
-        print(f'Error: could not load "Models/{fname}.h5')
+        print(f'Error: could not load "static/Models/{fname}.h5')
         exit()
     
 def generate_music(model, in_notes, in_durs, pitchnames, dur_names, num_notes):
@@ -441,16 +440,16 @@ def music_generation_pipeline(lookback=512, epochs=75, batch_size=64, num_notes=
     print("\nPlaying music.")
     play_music(f)
 
-def generate(filenames, num_notes, use_cpu):
-    if not filenames:
+def generate(name, num_notes, use_cpu):
+    if not name:
         print("Must specify caches filenames.")
         return
     if use_cpu:
         config.set_visible_devices([], 'GPU')
-    in_notes, in_durs, out_notes, out_durs, pitch, durs = load_data(filenames)
-    model = load_music_model(filenames)
+    in_notes, in_durs, out_notes, out_durs, pitch, durs = load_data(name)
+    model = load_music_model(name)
     generated_music = generate_music(model, in_notes, in_durs, pitch, durs, num_notes)
-    f = create_midi(generated_music, filenames)
+    f = create_midi(generated_music, name)
     play_music(f)
 
 def train(music_input, names, save, load, use_model, epochs, lookback, batch_size, verbose, use_cpu):
