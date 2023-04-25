@@ -129,10 +129,10 @@ dmypy.json
 .pyre/
 
 # Other
-Models/exlude/
-Data/
-History/
-Logs/
+static/Models/exlude/
+static/Data/
+static/History/
+static/Logs/
+static/Figures/
 Deliverables/
-Figures/
 .DS_Store
