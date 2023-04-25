@@ -4,7 +4,6 @@ Environment
 - conda activate music
 - cd bach-in-business
 - pip install -r requirements.txt
-- export FLASK_APP=app.py
 - flask run
 
 Model training requires .mid files in /static/Music/ or cached files in /static/Data
