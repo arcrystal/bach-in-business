@@ -129,7 +129,7 @@ dmypy.json
 .pyre/
 
 # Other
-static/Models/exlude/
+static/Models/exclude/
 static/Data/
 static/History/
 static/Logs/
