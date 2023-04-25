@@ -130,7 +130,7 @@ dmypy.json
 
 # Other
 static/Models/exclude/
-static/Data/
+static/Data/exclude/
 static/History/
 static/Logs/
 static/Figures/
