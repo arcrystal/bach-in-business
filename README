@@ -1,8 +1,11 @@
-Make new data, save the data, train model for 360 epochs, name the output files, generate music and save the midi file
-  $ python pipeline_onehand.py -m 'bach/*' -n bach -s -t -e 360 -b 256
-  $ tensorboard --logdir ./Logs/bach --port 8080
-
 Environment
+- clone the repo
 - conda create -n music python=3.10
 - conda activate music
+- cd bach-in-business
 - pip install -r requirements.txt
+- export FLASK_APP=app.py
+- flask run
+
+Model training requires .mid files in /static/Music/ or cached files in /static/Data
+Generating music requires a file in /static/Models/

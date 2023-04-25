@@ -3,5 +3,4 @@ tensorflow-metal
 matplotlib
 music21
 flask
-flask_cors
-midi2audio
+flask_socketio

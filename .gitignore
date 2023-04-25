@@ -129,17 +129,10 @@ dmypy.json
 .pyre/
 
 # Other
-*.docx
-*.pptx
-Music/
-Models/
-Data/
-Generated/
-History/
-Logs/
+static/Models/exclude/
+static/Data/
+static/History/
+static/Logs/
+static/Figures/
 Deliverables/
-Figures/
 .DS_Store
-backend/env
-backend/__pycache__
-*.sf2

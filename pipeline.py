@@ -1,9 +1,7 @@
-
 from music21 import converter, instrument, note, chord, stream, duration
-from midi2audio import FluidSynth
 
 from tensorflow import config
-from keras.callbacks import ModelCheckpoint, TensorBoard
+from keras.callbacks import ModelCheckpoint
 from keras.layers import LSTM, Dense, Dropout, Input, Concatenate
 from keras.models import Model, load_model
 from keras.utils import to_categorical
@@ -57,9 +55,9 @@ def extract(folders, flatten=True, transpose=False):
     all_durs = []
     for folder in folders:
         if '.mid' in folder:
-            files = ["Music/"+ folder]
+            files = ["static/Music/"+ folder]
         else:
-            files = glob.glob("Music/"+ folder + "/*.mid")
+            files = glob.glob("static/Music/"+ folder + "/*.mid")
         for file in files:
             print("Extracting:", file)
             if flatten:
@@ -103,7 +101,7 @@ def extract(folders, flatten=True, transpose=False):
 
     return all_notes, all_durs
 
-def transform(all_notes, all_durs, lookback=100):
+def transform(all_notes, all_durs, lookback=512):
     pitchnames = sorted(set(item for notes in all_notes for item in notes))
     note_to_int = {note:number for number, note in enumerate(pitchnames)}
     dur_names = sorted(set(item for durs in all_durs for item in durs))
@@ -130,7 +128,6 @@ def transform(all_notes, all_durs, lookback=100):
 
     out_notes = to_categorical(out_notes)
     out_durs = to_categorical(out_durs)
-
     return in_notes, in_durs, out_notes, out_durs, pitchnames, dur_names
 
 def build_model(lookback, output_size_notes, output_size_durs, n_units=512, summary=True):
@@ -160,21 +157,23 @@ def build_model(lookback, output_size_notes, output_size_durs, n_units=512, summ
     model = Model(inputs=[in_notes, in_durs], outputs=[out_notes, out_durs])
     model.compile(loss=["categorical_crossentropy", "categorical_crossentropy"],
                   optimizer='adam', # 'rmsprop',
-                  metrics=["accuracy"],
-                  loss_weights=[1, 0.05]) # 12 transposed keys have same durs
+                  metrics=["accuracy"])
     if summary:
         print(model.summary())
     return model
 
 def train_model(model, in_notes, in_durs, out_notes, out_durs,
                 epochs, batch_size, fname='model', verbose=2):
-    my_callbacks = [
-        ModelCheckpoint(filepath=f'Models/{fname}.h5',
-                        save_best_only=True,
-                        monitor='loss',
-                        mode='min'),
-        TensorBoard(log_dir=f'./Logs/{fname}/')
-    ]
+    my_callbacks = [ModelCheckpoint(
+        filepath=f'static/Models/{fname}.h5',
+        save_best_only=True,
+        monitor='loss',
+        mode='min')]
+
+    print("\nIn notes  :", in_notes.shape)
+    print("In durs   :", in_durs.shape)
+    print("Out notes :", out_notes.shape)
+    print("Out durs  :", out_durs.shape, end='\n\n')
 
     history = model.fit([in_notes, in_durs], [out_notes, out_durs],
                         epochs=epochs, batch_size=batch_size, callbacks=my_callbacks,
@@ -193,14 +192,14 @@ def plot_history(history, plot_fname='training_curves'):
     ax[1].set_title('Loss Curves')
     ax[1].set_xlabel('epoch')
     ax[1].legend(['notes_loss', 'durs_loss'], loc='upper right')
-    plt.savefig("Figures/" + plot_fname + ".png")
+    plt.savefig("static/Figures/" + plot_fname + ".png")
     plt.show()
 
 def load_music_model(fname='model'):
     try:
-        return load_model("Models/" + fname + ".h5")
+        return load_model("static/Models/" + fname + ".h5")
     except OSError:
-        print(f'Error: could not load "Models/{fname}.h5')
+        print(f'Error: could not load "static/Models/{fname}.h5')
         exit()
     
 def generate_music(model, in_notes, in_durs, pitchnames, dur_names, num_notes):
@@ -259,17 +258,13 @@ def create_midi(prediction_output, fname="music"):
         offset += dur
 
     midi_stream = stream.Stream(output_notes)
-    filename = "Generated/" + fname + ".mid"
+    filename = "static/Generated/" + fname + ".mid"
     i = 2
     while(os.path.exists(filename)):
-        filename = "Generated/" + fname + f"{i}.mid"
+        filename = "static/Generated/" + fname + f"{i}.mid"
         i += 1
 
     midi_stream.write("mid", fp=filename)
-    out_wav = filename.split('.')[0]+'.wav'
-    soundfont = 'FluidR3_GM.sf2'  # TODO: Change this file
-    fs = FluidSynth(sound_font=soundfont)
-    fs.midi_to_audio(filename, out_wav)
     return filename
 
 def play_music(fname):
@@ -289,21 +284,21 @@ def play_music(fname):
             clock.tick(30) # check if playback has finished
 
 def save_data(fname, in_notes, in_durs, out_notes, out_durs, pitchnames, dur_names):
-    if not os.path.exists(f'Data/{fname}'):
-        os.mkdir(f'Data/{fname}')
-    np.save(f'Data/{fname}/in_notes.npy', in_notes)
-    np.save(f'Data/{fname}/in_durs.npy', in_durs)
-    np.save(f'Data/{fname}/out_notes.npy', out_notes)
-    np.save(f'Data/{fname}/out_durs.npy', out_durs)
+    if not os.path.exists(f'static/Data/{fname}'):
+        os.mkdir(f'static/Data/{fname}')
+    np.save(f'static/Data/{fname}/in_notes.npy', in_notes)
+    np.save(f'static/Data/{fname}/in_durs.npy', in_durs)
+    np.save(f'static/Data/{fname}/out_notes.npy', out_notes)
+    np.save(f'static/Data/{fname}/out_durs.npy', out_durs)
 
-    with open(f'Data/{fname}/pitchnames', 'w') as f:
+    with open(f'static/Data/{fname}/pitchnames', 'w') as f:
         s = ""
         for p in pitchnames:
             s += p + " "
 
         f.write(s[:-1])
 
-    with open(f'Data/{fname}/dur_names', 'w') as f:
+    with open(f'static/Data/{fname}/dur_names', 'w') as f:
         s = ""
         for d in dur_names:
             s += str(d) + " "
@@ -311,15 +306,15 @@ def save_data(fname, in_notes, in_durs, out_notes, out_durs, pitchnames, dur_nam
         f.write(s[:-1])
 
 def load_data(fname):
-    in_notes = np.load(f'Data/{fname}/in_notes.npy')
-    in_durs = np.load(f'Data/{fname}/in_durs.npy')
-    out_notes = np.load(f'Data/{fname}/out_notes.npy')
-    out_durs = np.load(f'Data/{fname}/out_durs.npy')
+    in_notes = np.load(f'static/Data/{fname}/in_notes.npy')
+    in_durs = np.load(f'static/Data/{fname}/in_durs.npy')
+    out_notes = np.load(f'static/Data/{fname}/out_notes.npy')
+    out_durs = np.load(f'static/Data/{fname}/out_durs.npy')
 
-    with open(f'Data/{fname}/pitchnames', 'r') as f:
+    with open(f'static/Data/{fname}/pitchnames', 'r') as f:
         pitchnames = [x for x in f.read().split()]
 
-    with open(f'Data/{fname}/dur_names', 'r') as f:
+    with open(f'static/Data/{fname}/dur_names', 'r') as f:
         dur_names = []
         for x in f.read().split():
             if '.' in x:
@@ -445,29 +440,44 @@ def music_generation_pipeline(lookback=512, epochs=75, batch_size=64, num_notes=
     print("\nPlaying music.")
     play_music(f)
 
-def get_music_filename(fname, num_notes):
-    in_notes, in_durs, _, _, pitch, durs = load_data(fname)
-    model = load_music_model(fname)
+def generate(name, num_notes, use_cpu):
+    if not name:
+        print("Must specify caches filenames.")
+        return
+    if use_cpu:
+        config.set_visible_devices([], 'GPU')
+    in_notes, in_durs, out_notes, out_durs, pitch, durs = load_data(name)
+    model = load_music_model(name)
     generated_music = generate_music(model, in_notes, in_durs, pitch, durs, num_notes)
-    midi = create_midi(generated_music, fname)
-    print(midi)
-    play_music(midi)
-    return midi
+    f = create_midi(generated_music, name)
+    play_music(f)
 
-def get_info():
-    folders = ['can','cellosui','cnt','dou','fugues',
-               'invent','inver','mir','other',
-               'partitas','prelude','reg','sinfon','tri']
-    for folder in folders:
-        folder = 'bach/' + folder
-        print(folder)
-        n, d = extract([folder], transpose=False)
-        x1, _, y1, y2, _, _ = transform(n, d)
-        m1 = build_model(128, y1.shape[1], y2.shape[1], n_units=128, summary=False)
-        m2 = build_model(512, y1.shape[1], y2.shape[1], n_units=512, summary=False)
-        print(x1.shape[0], y1.shape[1], y2.shape[1], np.sum([np.prod(var.shape) for var in m1.trainable_variables]).item(), np.sum([np.prod(var.shape) for var in m2.trainable_variables]).item())
-        print()
-        print()
+def train(music_input, names, save, load, use_model, epochs, lookback, batch_size, verbose, use_cpu):
+    if not names:
+        if not music_input:
+            print("Must specify input files or caches filenames.")
+            return
+        if len(music_input) == 1:
+            names = music_input.replace('/','_')
+        else:
+            names = ".".join(music_input).replace('/','_')
+    if use_cpu:
+        config.set_visible_devices([], 'GPU')
+    if load:
+        in_notes, in_durs, out_notes, out_durs, pitch, durs = load_data(names)
+    else:
+        all_notes, all_durs = extract(music_input.split())
+        in_notes, in_durs, out_notes, out_durs, pitch, durs = transform(all_notes, all_durs, lookback)
+    if save:
+        save_data(names, in_notes, in_durs, out_notes, out_durs, pitch, durs)
+    if use_model and names:
+        model = load_music_model(names)
+    else:
+        model = build_model(lookback, out_notes.shape[1], out_durs.shape[1])
+
+    history = train_model(model, in_notes, in_durs, out_notes, out_durs,
+                            epochs, batch_size, names, verbose)
+    # plot_history(history, names)
 
 if __name__=="__main__":
     music_generation_pipeline()
