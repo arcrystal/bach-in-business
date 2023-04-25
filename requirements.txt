@@ -3,4 +3,4 @@ tensorflow-metal
 matplotlib
 music21
 flask
-flask_socketio
+
