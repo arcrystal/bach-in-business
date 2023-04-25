@@ -1,22 +1,9 @@
 Environment
+- clone the repo
 - conda create -n music python=3.10
 - conda activate music
 - pip install -r requirements.txt
+- flask run
 
-Usage
-- Make new data, save the data, train model for 360 epochs, name the output files, generate music and save the midi file
-  $ python pipeline.py -m 'bach/*' -n bach -s -t
-
-Arguments
-    '-m',  '--Music',     input .mid foldernames or regex pattern
-    '-t',  '--Train',     Whether to train a model
-    '-n',  '--Name',      Naming for saved/cached files (data, figures, models, generated music)
-    '-e',  '--Epochs',    Number of training epochs
-    '-s',  '--SaveData',  Whether to save preprocessed data
-    '-l',  '--LoadData',  Whether to load preprocessed data
-    '-u',  '--Use',       Whether to use load a model's saved weights
-    '-b',  '--BatchSize', Model training batchsize
-    '-v',  '--Verbose',   Model training console log
-    '-nn', '--NumNotes',  Number of notes to generate
-    '-lb', '--Lookback',  Lookback of model architecture
-    '-cpu','--cpu',       Whether to use CPU for training (i.e. not use GPU)
+Model training requires .mid files in /static/Music/ or cached files in /static/Data
+Generating music requires a file in /static/Models/
