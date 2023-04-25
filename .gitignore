@@ -129,9 +129,8 @@ dmypy.json
 .pyre/
 
 # Other
-Models/
+Models/exlude/
 Data/
-Generated/
 History/
 Logs/
 Deliverables/
