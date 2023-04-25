@@ -27,32 +27,6 @@
                 <!-- Add more navigation items here -->
             </ul>
         </nav>
-        <!-- 
-        <div class="container mt-5">
-            <h1>Select a Model to Generate Music</h1>
-            <form action="{{ url_for('generate_music') }}" method="post" class="row row-cols-auto g-3 mt-3">
-                
-                <div class="mb-3 form-check">
-                    <input type="checkbox" class="form-check-input" name="use_cpu" id="use_cpu">
-                    <label class="form-check-label" for="use_cpu">Use CPU</label>
-                </div>
-                
-                <div class="mb-3 form-check">
-                    <input type="number" class="form-check-input" name="num_notes" id="num_notes" min="1" value="100" required>
-                    <label class="form-check-label" for="num_notes">Num Notes</label>
-                </div>
-                <div class="container mt-5">
-                        {% for model in models %}
-                        <div class="model-wrapper">
-                            <button type="submit" class="btn model-button" name="action" value="generate">{{ model }}</button>
-                        </div>
-                        {% endfor %}
-                    </form>
-                </div>
-                
-            </form>
-        </div> %/
-    -->
         <div class="container content-container" id="content-container">
             <h1>Select a Model to Generate Music</h1>
             <form action="{{ url_for('generate_music') }}" method="post" class="mt-3">
