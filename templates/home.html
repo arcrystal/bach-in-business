@@ -4,18 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MIDI Player</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-KyZXEAg3QhqLMpG8r+Knujsl7/1L_dstPt3HV5HzF6Gvk/e3s4xamK03kFj40aLcI" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" integrity="sha384-KyZXEAg3QhqLMpG8r+Knujsl7/1L_dstPt3HV5HzF6Gvk/e3s4xamK03kFj40aLcI" crossorigin="anonymous">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <script src="https://cdn.jsdelivr.net/combine/npm/tone@14.7.58,npm/@magenta/music@1.23.1/es6/core.js,npm/focus-visible@5,npm/html-midi-player@1.5.0"></script>
-    <!-- need for sidebar -->
-    <script>
-        function toggleSidebar() {
-            const sidebar = document.getElementById("sidebar");
-            const contentContainer = document.getElementById("content-container");
-            sidebar.classList.toggle("sidebar-hidden");
-            contentContainer.classList.toggle("sidebar-adjacent");
-        }
-    </script>
+    <script src="{{ url_for('static', filename='js/sidebar.js') }}"></script>
 </head>
 <body>
     <h1 class="my-5">Music Generation Pipeline</h1>
@@ -38,7 +30,6 @@
             </div>
         </div>
         {% endfor %}
-
     </div>
 </body>
 </html>

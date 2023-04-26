@@ -258,14 +258,17 @@ def create_midi(prediction_output, fname="music"):
         offset += dur
 
     midi_stream = stream.Stream(output_notes)
-    filename = "static/Generated/" + fname + ".mid"
-    i = 2
-    while(os.path.exists(filename)):
-        filename = "static/Generated/" + fname + f"{i}.mid"
+    fname1 = "static/Generated/" + fname + ".mid"
+    fname2 = "static/Generated/keep/" + fname + ".mid"
+    i = 1
+    while(os.path.exists(fname1) or os.path.exists(fname2)):
         i += 1
+        fname1 = "static/Generated/" + fname + f"{i}.mid"
+        fname2 = "static/Generated/keep/" + fname + f"{i}.mid"
+        
 
-    midi_stream.write("mid", fp=filename)
-    return filename
+    midi_stream.write("mid", fp=fname1)
+    return fname1
 
 def play_music(fname):
         # mixer config
@@ -449,8 +452,9 @@ def generate(name, num_notes, use_cpu):
     in_notes, in_durs, out_notes, out_durs, pitch, durs = load_data(name)
     model = load_music_model(name)
     generated_music = generate_music(model, in_notes, in_durs, pitch, durs, num_notes)
-    f = create_midi(generated_music, name)
-    play_music(f)
+    fname = create_midi(generated_music, name)
+    play_music(fname)
+    return fname
 
 def train(music_input, names, save, load, use_model, epochs, lookback, batch_size, verbose, use_cpu):
     if not names:

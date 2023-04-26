@@ -31,3 +31,29 @@ document.addEventListener('DOMContentLoaded', function() {
     updateSliderValue('batchsize', 'batchsize-value');
     updateSliderValue('verbose', 'verbose-value');
 });
+
+const form = document.getElementById('pipeline-form');
+const output = document.getElementById('output-content');
+
+form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const formData = new FormData(form);
+    const response = await fetch("{{ url_for('train') }}", {
+        method: 'POST',
+        body: formData
+    });
+
+    if (response.ok) {
+        console.log("Training instance submitted");
+    } else {
+        console.error("Error submitting training instance");
+    }
+});
+
+const socket = io.connect('{{ request.url_root }}');
+
+socket.on('console_output', (data) => {
+    const message = document.createElement('p');
+    message.textContent = data.message;
+    output.appendChild(message);
+});

@@ -242,3 +242,24 @@ button[type="submit"]:hover {
   background-color: #34495e;
   cursor: pointer;
 }
+
+/* -------- CSS For generate.html ----------- */
+.btn-save {
+  background-color: #28a745;
+  color: white;
+}
+
+.btn-save:hover {
+  background-color: #218838;
+  color: white;
+}
+
+.btn-delete {
+  background-color: #dc3545;
+  color: white;
+}
+
+.btn-delete:hover {
+  background-color: #c82333;
+  color: white;
+}

@@ -4,48 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Music Generation Pipeline</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-KyZXEAg3QhqLMpG8r+Knujsl7/1L_dstPt3HV5HzF6Gvk/e3s4xamK03kFj40aLcI" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" integrity="sha384-KyZXEAg3QhqLMpG8r+Knujsl7/1L_dstPt3HV5HzF6Gvk/e3s4xamK03kFj40aLcI" crossorigin="anonymous">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <script src="{{ url_for('static', filename='js/pipeline.js') }}"></script>
     <script src="https://cdn.socket.io/4.4.1/socket.io.min.js" integrity="sha384-pGtfmbQ6E7x4wE8w4BJU6hAJU6A4Ufsyyr7M9QfCJCQMG6a+jU6pLzIlkMwDwsnD" crossorigin="anonymous"></script>
-    <script>
-        // The rest of your JavaScript code goes here
-
-        const form = document.getElementById('pipeline-form');
-        const output = document.getElementById('output-content');
-
-        form.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const formData = new FormData(form);
-            const response = await fetch("{{ url_for('train') }}", {
-                method: 'POST',
-                body: formData
-            });
-
-            if (response.ok) {
-                console.log("Training instance submitted");
-            } else {
-                console.error("Error submitting training instance");
-            }
-        });
-
-        const socket = io.connect('{{ request.url_root }}');
-
-        socket.on('console_output', (data) => {
-            const message = document.createElement('p');
-            message.textContent = data.message;
-            output.appendChild(message);
-        });
-    </script>
-    <!-- need for sidebar -->
-    <script>
-        function toggleSidebar() {
-            const sidebar = document.getElementById("sidebar");
-            const contentContainer = document.getElementById("content-container");
-            sidebar.classList.toggle("sidebar-hidden");
-            contentContainer.classList.toggle("sidebar-adjacent");
-        }
-    </script>
+    <script src="{{ url_for('static', filename='js/sidebar.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/train.js') }}"></script>
 </head>
 <body>
     <h1 class="my-5">Music Generation Pipeline</h1>
@@ -60,61 +23,51 @@
     </nav>
     <div class="container content-container" id="content-container">
         <form action="{{ url_for('train_model') }}" method="post" onsubmit="return validateForm();">
-
             <!-- String input for music folder name -->
             <div class="mb-3">
                 <label for="music_input" class="form-label">Music Input</label>
                 <input type="text" class="form-control" name="music_input" id="music_input" placeholder="i.e. bach/can bach/dou">
             </div>
-
             <!-- String input for filenames -->
             <div class="mb-3">
                 <label for="names" class="form-label">Filenames</label>
                 <input type="text" class="form-control" name="names" id="names" placeholder="i.e. can_dou">
             </div>
-
             <!-- Boolean switch for save data -->
             <div class="mb-3 form-check">
                 <input type="checkbox" class="form-check-input" name="save_data" id="save_data" onclick="validateSaveLoad()">
                 <label class="form-check-label" for="save_data">Save Data</label>
             </div>
-
             <!-- Boolean switch for load data -->
             <div class="mb-3 form-check">
                 <input type="checkbox" class="form-check-input" name="load_data" id="load_data" onclick="validateSaveLoad()">
                 <label class="form-check-label" for="load_data">Load Data</label>
             </div>
-
             <!-- Integer input for epochs -->
             <div class="mb-3">
                 <label for="epochs" class="form-label">Epochs</label>
                 <input type="number" class="form-control" min="1" max="500" step="1" value="75" name="epochs" id="epochs">
             </div>
-
             <!-- Integer input for lookback -->
             <div class="mb-3">
                 <label for="lookback" class="form-label">Lookback</label>
                 <input type="number" class="form-control" min="64" max="1024" step="32" value=256 name="lookback" id="lookback">
             </div>
-
             <!-- Integer input for batch size -->
             <div class="mb-3">
                 <label for="batchsize" class="form-label">Batchsize</label>
                 <input type="number" class="form-control" min="8" max="256" step="8" value="64" name="batchsize" id="batchsize">
             </div>
-
             <!-- Integer input for verbosity -->
             <div class="mb-3">
                 <label for="verbose" class="form-label">Verbose</label>
                 <input type="number" class="form-control" min="0" max="2" step="1" value="2" name="verbose" id="verbose">
             </div>
-
             <!-- Boolean switch for use CPU -->
             <div class="mb-3 form-check">
                 <input type="checkbox" class="form-check-input" name="use_cpu" id="use_cpu">
                 <label class="form-check-label" for="use_cpu">Use CPU</label>
             </div>
-
             <!-- Boolean switch for load model -->
             <div class="mb-3 form-check">
                 <input type="checkbox" class="form-check-input" name="load_model" id="load_model">
