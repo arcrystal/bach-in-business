@@ -1,3 +1,5 @@
+![banner](./elevator_pitch.pdf)
+
 Environment
 - clone the repo
 - conda create -n music python=3.10
@@ -8,5 +10,3 @@ Environment
 
 Model training requires .mid files in /static/Music/ or cached files in /static/Data
 Generating music requires the same and also a .h5 file in /static/Models/
-
-![alt text](https://github.com/arcrystal/bach-in-business/elevator_pitch.pdf)
