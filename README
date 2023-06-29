@@ -8,3 +8,5 @@ Environment
 
 Model training requires .mid files in /static/Music/ or cached files in /static/Data
 Generating music requires the same and also a .h5 file in /static/Models/
+
+![alt text](https://github.com/https://github.com/arcrystal/bach-in-business/elevator_pitch.pdf)
